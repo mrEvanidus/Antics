@@ -27,7 +27,7 @@ class AIPlayer(Player):
     #   inputPlayerId - The id to give the new player (int)
     ##
     def __init__(self, inputPlayerId):
-        super(AIPlayer,self).__init__(inputPlayerId, "AI Template (not implemented)")
+        super(AIPlayer,self).__init__(inputPlayerId, "'smart' AI (implemented)")
     
     ##
     #getPlacement
@@ -51,7 +51,31 @@ class AIPlayer(Player):
     #       If setup phase 2: list of two 2-tuples of ints -> [(x1,y1), (x2,y2)]
     ##
     def getPlacement(self, currentState):
-       return None
+
+        #placement for setup phase 1: hard-coded values for now
+        if currentState.phase == SETUP_PHASE_1:
+            return [(2,1),(7,1),(0,3),(1,3),(2,3),(3,3),(4,3),(5,3),(6,3),(7,3),(8,3)]
+
+        #placement for setup phase 2: find first two empty squares
+        elif currentState.phase == SETUP_PHASE_2:
+
+            #keep track of how many foods we've placed
+            placedFood = False
+            for  i in range(0,BOARD_LENGTH):
+                for j in range(6,BOARD_LENGTH):
+                    if getConstrAt(currentState, (i,j)) == None:
+                        if placedFood:
+                            return [(x,y),(i,j)]
+                        else:
+                            x = i
+                            y = j
+                            placedFood = True
+
+
+
+
+        else:
+            return None
     
     ##
     #getMove
@@ -74,6 +98,12 @@ class AIPlayer(Player):
     #Return: Move(moveType [int], coordList [list of 2-tuples of ints], buildType [int]
     ##
     def getMove(self, currentState):
+        #find the foods coords
+        for i in range(0,BOARD_LENGTH):
+            for j in range(0, BOARD_LENGTH):
+                if (getConstrAt(currentState,[(i,j)]) == FOOD):
+                          
+
         return None
     
     ##
