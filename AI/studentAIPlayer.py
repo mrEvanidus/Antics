@@ -129,7 +129,7 @@ class AIPlayer(Player):
 		
 		return Move(END, None, None, )
 		
-		myWorkers = getAntList(currentState, 2, [(WORKER)])
+		myWorkers = getAntList(currentState, currentState.whoseTurn, [(WORKER)])
 		for ant in myWorkers:
 			if ant.hasMoved:
 				continue
