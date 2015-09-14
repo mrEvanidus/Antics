@@ -27,7 +27,7 @@ class AIPlayer(Player):
     #   inputPlayerId - The id to give the new player (int)
     ##
     def __init__(self, inputPlayerId):
-     super(AIPlayer,self).__init__(inputPlayerId, "'smart' AI (implemented)")
+     super(AIPlayer,self).__init__(inputPlayerId, "Economy AI")
 
 
 
@@ -111,6 +111,8 @@ class AIPlayer(Player):
         #   -have workers avoid grass (we've placed grass out of the way for most cases)
         #   -if we can't move closer (i.e. we are blocked) move to a different spot
         #           (and hope we aren't blocked there)
+        #   -if there is another ant on the food we are trying to get to, go towards a different food
+        #
         #QUEEN:
         #   -try to move AWAY from the nearest food, so as not to block the workers
         #   -after the first turn, do nothing. the queen's job is to stay out
@@ -164,11 +166,19 @@ class AIPlayer(Player):
 
             #calculate and pick the closest destinations
             closerFood = self.findClosestCoord(currentState, ant.coords, foodCoords)
-            closerDepository = self.findClosestCoord(currentState, ant.coords, [tunnelCoord, hillCoord])
+            closerGoal = self.findClosestCoord(currentState, ant.coords, [tunnelCoord, hillCoord])
             if ant.carrying:
-                dest = closerDepository
-            else:
+                if getAntAt(currentState, closerGoal) == None:
+                    dest = closerGoal
+                else:
+                    continue #wait for other moves to be done
+            elif getAntAt(currentState, closerFood) == None:
                 dest = closerFood
+            else:
+                fc = foodCoords
+                fc.remove(closerFood)
+                dest = self.findClosestCoord(currentState, ant.coords, fc)
+
 
             #make sure we move as far as possible UNLESS the food is only 1 space away
             if stepsToReach(currentState, ant.coords, dest) != 1 and UNIT_STATS[WORKER][MOVEMENT] > len(move.coordList):
