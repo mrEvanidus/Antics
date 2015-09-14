@@ -119,6 +119,8 @@ class AIPlayer(Player):
         #ANTHILL:
         #   -if we have less than 2 workers, build a worker
 
+        #keeps track of the best (overall) move
+        bestMove = Move(END, None, None)
 
         #coordinates of our starting ants (hard-coded in the 'setup' phase
         hillCoord = (2,1) # the queen starts here, as do any built ants
@@ -135,6 +137,8 @@ class AIPlayer(Player):
         antMoves = listAllMovementMoves(currentState)
         #list of my ants (list of Ant objects)
         myWorkers = getAntList(currentState, currentState.whoseTurn, [(WORKER)])
+        #list of locations of food which have claimed by workers (list of tuples)
+        foodClaims = self.layClaims(currentState, myWorkers, foodCoords)
 
         #first, if the queen is on the hill, move her off
         #try to move her away from food
@@ -144,48 +148,52 @@ class AIPlayer(Player):
             queenMoves = listReachableAdjacent(currentState, hillCoord, UNIT_STATS[QUEEN][MOVEMENT])
             closestFoodToQueen = self.findClosestCoord(currentState, hillCoord, foodCoords)
             bestQueenMove = self.findFurthestCoord(currentState, closestFoodToQueen, queenMoves)
-            return Move(MOVE_ANT, [hillCoord, bestQueenMove], None)
+            bestMove = Move(MOVE_ANT, [hillCoord, bestQueenMove], None)
 
         #Then, also first turn, build a worker (up to 2)
         #this method also means that if a worker is destroyed we will build a new one
-        if len(myWorkers) < 2:
-            return Move(BUILD, [hillCoord], WORKER)
+        elif len(myWorkers) < 2:
+            bestMove = Move(BUILD, [hillCoord], WORKER)
+
 
         #Finally, move any workers that we can.
         #workers without food move towards food
-        # workers with food move towards goals (hill or tunnel
-        bestMove = Move(END, None, None)
-        for move in antMoves:
-            ant = getAntAt(currentState, move.coordList[0])
+        # workers with food move towards goals (hill or tunnel)
+        else:
+            workerMoves = []
+            for move in antMoves:
+                ant = getAntAt(currentState, move.coordList[0])
 
-            #only deal with worker-type ants
-            if ant.type != WORKER:
-                continue
+                #only deal with worker-type ants
+                if ant.type == WORKER:
+                    workerMoves.append(move)
 
-            #calculate and pick the closest destinations
-            closerFood = self.findClosestCoord(currentState, ant.coords, foodCoords)
-            closerDepository = self.findClosestCoord(currentState, ant.coords, [tunnelCoord, hillCoord])
-            if ant.carrying:
-                dest = closerDepository
-            else:
-                dest = closerFood
+            for workerMove in workerMoves:
+                #calculate and pick the closest destinations
+                if ant.carrying:
+                    dest = self.findClosestCoord(currentState, ant.coords, [tunnelCoord, hillCoord])
+                elif ant in foodClaims:
+                    dest = foodClaims[ant]
+                else:
+                    dest = self.findClosestCoord(currentState, ant.coords, foodCoords)
 
-            #make sure we move as far as possible UNLESS the food is only 1 space away
-            if stepsToReach(currentState, ant.coords, dest) != 1 and UNIT_STATS[WORKER][MOVEMENT] > len(move.coordList):
-                continue
+                #make sure we move as far as possible UNLESS the food is only 1 space away
+                if stepsToReach(currentState, ant.coords, dest) != 1 and \
+                                UNIT_STATS[WORKER][MOVEMENT] > len(workerMove.coordList):
+                    continue
 
-            #find an appropriate move
-            currentDist = stepsToReach(currentState, move.coordList[0], dest)
-            nextDist = stepsToReach(currentState, move.coordList[len(move.coordList) - 1], dest)
-            if bestMove.moveType == MOVE_ANT:
-                bestMoveDist = stepsToReach(currentState, bestMove.coordList[len(bestMove.coordList) - 1], dest)
-            else:
-                bestMoveDist = 100 #nasty hard-coded way to ensure that we always move the right direction
+                #find an appropriate move
+                currentDist = stepsToReach(currentState, workerMove.coordList[0], dest)
+                nextDist = stepsToReach(currentState, workerMove.coordList[len(workerMove.coordList) - 1], dest)
+                if bestMove.moveType == MOVE_ANT:
+                    bestMoveDist = stepsToReach(currentState, bestMove.coordList[len(bestMove.coordList) - 1], dest)
+                else:
+                    bestMoveDist = 100 #nasty hard-coded way to ensure that we always move the right direction
 
-            #ask: is this the best move?
-            if nextDist <= currentDist and nextDist < bestMoveDist \
-                    and self.containsNoGrass(currentState, move.coordList):
-                bestMove = move
+                #ask: is this the best move?
+                if nextDist <= currentDist and nextDist < bestMoveDist \
+                        and self.containsNoGrass(currentState, workerMove.coordList):
+                    bestMove = workerMove
 
         #if there are no more moves we want to do
         return bestMove
@@ -256,6 +264,38 @@ class AIPlayer(Player):
                 return False
 
         return True
+
+    def layClaims(self, currentState, workers, foodCoords):
+
+        reversedWorkers = []
+        result1 = {}
+        sum1 = 0
+        fc = foodCoords
+        for w in workers:
+
+            reversedWorkers.insert(0, w)
+
+            closestFood = self.findClosestCoord(currentState, w.coords, fc)
+            result1[w] = closestFood
+            fc.remove(closestFood)
+            sum1 += stepsToReach(currentState, w.coords, closestFood)
+
+        fc = foodCoords
+        result2 = {}
+        sum2 = 0
+        for w in reversedWorkers:
+
+            closestFood = self.findClosestCoord(currentState, w.coords, fc)
+            result2[w] = closestFood
+            fc.remove(closestFood)
+
+            sum2 += stepsToReach(currentState, w.coords, closestFood)
+
+        if sum1 < sum2:
+            return result1
+        else:
+            return result2
+
 
     ##
     #getAttack
