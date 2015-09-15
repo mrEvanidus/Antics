@@ -86,7 +86,7 @@ def getAntList(currentState,
 #
 def getConstrList(currentState,
                   pid = None,
-                  types = (ANTHILL, TUNNEL) ):
+                  types = (ANTHILL, TUNNEL, GRASS, FOOD) ):
 
     #start with a list of all constrs that belong to the indicated player(s)
     allConstrs = []
