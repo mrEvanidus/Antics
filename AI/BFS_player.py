@@ -16,7 +16,7 @@ from AIPlayerUtils import *
 #Variables:
 #   playerId - The id of the player.
 ##
-class BFS_player(Player):
+class AIPlayer(Player):
 
 	#__init__
 	#Description: Creates a new Player
@@ -25,7 +25,7 @@ class BFS_player(Player):
 	#   inputPlayerId - The id to give the new player (int)
 	##
 	def __init__(self, inputPlayerId):
-		super(BFS_player,self).__init__(inputPlayerId, "Reward/Punishment AI")
+		super(AIPlayer,self).__init__(inputPlayerId, "Reward/Punishment AI")
 
 	##
 	#getPlacement
@@ -92,6 +92,7 @@ class BFS_player(Player):
 	##
 	#TODO: AI should make moves according to BFS & board evaluation
 	def getMove(self, currentState):
+		#self.evaluate(currentState)
 		moves = listAllLegalMoves(currentState)
 		return moves[random.randint(0,len(moves) - 1)]
 
@@ -125,7 +126,7 @@ class BFS_player(Player):
 	#Returns: the state of the game after the move
 	##
 	def genState(self, currentState, moveAction):
-		simpleState = currentState.fastClone()
+		simpleState = currentState.fastclone()
 
 		opponentId = 0
 		if self.playerId == 0:
@@ -201,9 +202,39 @@ class BFS_player(Player):
 		allAnts = getAntList(gameState, pid=None)
 		antResult = (len(myInv.ants) - len(opponentInv.ants))/len(allAnts) + 0.5
 
+		#ant values (sum of stats minus build cost)
+		workerValue = 4
+		droneValue = 6
+		soldierValue = 6
+		rangeValue = 5
+
+		myAntSum = 0
+		for myAnt in myInv.ants:
+			if myAnt.type == WORKER:
+				myAntSum = myAntSum + workerValue
+			elif myAnt.type == DRONE:
+				myAntSum = myAntSum + droneValue
+			elif myAnt.type == SOLDIER:
+				myAntSum = myAntSum + soldierValue
+			elif myAnt.type == R_SOLDIER:
+				myAntSum = myAntSum + rangeValue
+
+		oppAntSum = 0
+		for oppAnt in myInv.ants:
+			if oppAnt.type == WORKER:
+				oppAntSum = oppAntSum + workerValue
+			elif oppAnt.type == DRONE:
+				oppAntSum = oppAntSum + droneValue
+			elif oppAnt.type == SOLDIER:
+				oppAntSum = oppAntSum + soldierValue
+			elif oppAnt.type == R_SOLDIER:
+				oppAntSum = oppAntSum + rangeValue
+
+		armyStrength = (myAntSum - oppAntSum)/(myAntSum + oppAntSum) + 0.5
+
 		#weight all considerations - higher multipliers = higher weight
 		#food - 2
 		#number of ants - 1
-		result = (foodResult*2 + antResult)/3
+		result = (foodResult*2 + antResult + armyStrength)/4
 
 		return result
