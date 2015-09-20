@@ -2,7 +2,7 @@ import random
 from Player import *
 from Constants import *
 from Construction import CONSTR_STATS
-from Ant import UNIT_STATS
+from Ant import *
 from Move import Move
 from GameState import addCoords
 from AIPlayerUtils import *
@@ -94,7 +94,19 @@ class AIPlayer(Player):
 	def getMove(self, currentState):
 		self.evaluate(currentState)
 		moves = listAllLegalMoves(currentState)
-		return moves[random.randint(0,len(moves) - 1)]
+
+		bestMove = None
+		bestMoveValue = 0.0
+		#evaluate each move and pick the best one
+		for move in moves:
+			nextState = self.genState(currentState, move)
+			value = self.evaluate(nextState)
+			if (value > bestMoveValue):
+				bestMove = move
+
+		return bestMove
+
+		#return moves[random.randint(0,len(moves) - 1)]
 
 	##
 	#getAttack
@@ -111,7 +123,7 @@ class AIPlayer(Player):
 
 
 	#================================================================================
-	#   BOARD EVALUATION FUNCTIONS
+	#   BOARD EVALUATION FUNCTIONS FOR HOMEWORK 2
 	#================================================================================
 
 	##
@@ -123,7 +135,8 @@ class AIPlayer(Player):
 	#   moveAction - the move to be made on the current state
 	#                  (we assume these are always legal moves)
 	#
-	#Returns: the state of the game after the move
+	#Returns: the state of the game after the move,
+	# or None if the move seems invalid (limited checks for this)
 	##
 	def genState(self, currentState, moveAction):
 		simpleState = currentState.fastclone()
@@ -132,14 +145,17 @@ class AIPlayer(Player):
 		if self.playerId == 0:
 			opponentId = 1
 
-		if moveAction.type == MOVE_ANT:
+		if moveAction.moveType == MOVE_ANT:
 			#move the ant.
 			movingAnt = getAntAt(simpleState, moveAction.coordList[0])
+			if movingAnt == None:
+				return None
+
 			movingAnt.coords = moveAction.coordList[len(moveAction.coordList)-1]
 
 			#assume we attack an ant nearby
 			# (in the case of multiple targets this may be inaccurate)
-			for coord in listAdjacent(movingAnt.coord):
+			for coord in listAdjacent(movingAnt.coords):
 				ant = getAntAt(simpleState, coord)
 				if ant != None and ant.player != self.playerId:
 					ant.health -= UNIT_STATS[movingAnt.type][ATTACK]
@@ -149,23 +165,33 @@ class AIPlayer(Player):
 					break
 
 			#worker ants pick up food if they end turn on a food
-			foods = getConstrList(currentState,None,[(FOOD)])
+			foods = getConstrList(simpleState, None, [(FOOD)])
 			for food in foods:
-				if food.coords == movingAnt.coords:
+				if movingAnt.type == WORKER and food.coords == movingAnt.coords:
 					movingAnt.carrying = True
 
 			#worker ants drop food if they end turn on the goals
+			goals = getConstrList(simpleState, None, types=(ANTHILL,TUNNEL))
+			for goal in goals:
+				if movingAnt.type == WORKER and goal.coords == movingAnt.coords and movingAnt.carrying:
+					movingAnt.carrying = False
+					simpleState.inventories[self.playerId].foodCount += 1
 
 
-		if moveAction.type == BUILD:
-			pass
+		elif moveAction.moveType == BUILD:
+			# decrease the food amount for the player
+			simpleState.inventories[self.playerId].foodCount -= UNIT_STATS[moveAction.buildType][COST]
+			if simpleState.inventories[self.playerId].foodCount > 0:
+				return None
 
-		if moveAction.type == END:
-			#we make no change
-			return currentState
+			#add the appropriate ant to the player's inventory
+			newAnt = Ant(moveAction.coordList[0], moveAction.buildType, self.playerId)
+			simpleState.inventories[self.playerId].ants.append(newAnt)
 
+		# elif moveAction.moveType == END:
+			# we made no change
 
-		return None
+		return simpleState
 
 	##
 	#evaluate
