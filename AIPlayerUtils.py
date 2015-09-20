@@ -158,7 +158,7 @@ def getAntAt(state, coords):
 def listAdjacent(coord):
     #catch invalid inputs
     if (not legalCoord(coord)):
-        return [];
+        return []
 
     #this set of coord deltas represent movement in each cardinal direction
     deltas = [ (-1, 0), (1, 0), (0, -1), (0, 1) ]
