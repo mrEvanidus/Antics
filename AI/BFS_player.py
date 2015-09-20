@@ -92,13 +92,20 @@ class AIPlayer(Player):
 	##
 	#TODO: AI should make moves according to BFS & board evaluation
 	def getMove(self, currentState):
-		#self.evaluate(currentState)
 		moves = listAllLegalMoves(currentState)
 
+		bestMove = None
+		bestMoveValue = 0.0
+		#evaluate each move and pick the best one
 		for move in moves:
 			nextState = self.genState(currentState, move)
+			value = self.evaluate(nextState)
+			if (value > bestMoveValue):
+				bestMove = move
 
-		return moves[random.randint(0,len(moves) - 1)]
+		return bestMove
+
+		#return moves[random.randint(0,len(moves) - 1)]
 
 	##
 	#getAttack
