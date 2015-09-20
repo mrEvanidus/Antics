@@ -90,13 +90,12 @@ class AIPlayer(Player):
 	#
 	#Return: The Move to be made
 	##
-	#TODO: AI should make moves according to BFS & board evaluation
 	def getMove(self, currentState):
-		self.evaluate(currentState)
 		moves = listAllLegalMoves(currentState)
 
-		bestMove = None
-		bestMoveValue = 0.0
+		bestMove = moves[0]
+		bestMoveValue = self.evaluate(self.genState(currentState, bestMove))
+
 		#evaluate each move and pick the best one
 		for move in moves:
 			nextState = self.genState(currentState, move)
@@ -161,7 +160,7 @@ class AIPlayer(Player):
 					ant.health -= UNIT_STATS[movingAnt.type][ATTACK]
 					#an ant has died
 					if ant.health <= 0:
-						simpleState.inventories[opponentId].remove(ant)
+						simpleState.inventories[opponentId].ants.remove(ant)
 					break
 
 			#worker ants pick up food if they end turn on a food
@@ -268,5 +267,29 @@ class AIPlayer(Player):
 		print result
 		if result < 0 or result > 1:
 			print "WARNING: Eval result not within range 0:1 --> {0} ".format(result)
+
+		return result
+
+	##
+	#findClosestCoord
+	#Description: returns the closest in a list of coords from a specified
+	#
+	#Parameters:
+	#   currentState - the current game state, as a GameState object
+	#   src - the starting coordinate, as a tuple
+	#   destList - a list of destination tuples
+	#
+	#Return: The closest coordinate from the list
+	##
+	def findClosestCoord(self, currentState, src, destList):
+		result = destList[0]
+		lastDist = stepsToReach(currentState, src, result)
+
+		#loop through to find the closest coordinates
+		for coords in destList:
+			currentDist = stepsToReach(currentState, src, coords)
+			if currentDist < lastDist:
+				result = coords
+				lastDist = currentDist
 
 		return result
