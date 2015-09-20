@@ -90,12 +90,12 @@ class AIPlayer(Player):
 	#
 	#Return: The Move to be made
 	##
+	#TODO: AI should make moves according to BFS & board evaluation
 	def getMove(self, currentState):
 		moves = listAllLegalMoves(currentState)
 
 		bestMove = moves[0]
 		bestMoveValue = self.evaluate(self.genState(currentState, bestMove))
-
 		#evaluate each move and pick the best one
 		for move in moves:
 			nextState = self.genState(currentState, move)
@@ -212,6 +212,16 @@ class AIPlayer(Player):
 			opponentId = 1
 		opponentInv = gameState.inventories[opponentId]
 
+		buildings = getConstrList(gameState, self.playerId, (ANTHILL, TUNNEL))
+		buildingCoords = []
+		buildingCoords.append(buildings[0].coords)
+		buildingCoords.append(buildings[1].coords)
+
+		food = getConstrList(gameState, None, (FOOD, ))
+		foodCoords = []
+		for foodObj in food:
+			foodCoords.append(foodObj.coords)
+
 		#base-case: if we win, return 1.
 		if myInv.foodCount == 11 or opponentInv.getQueen() == None:
 			return 1.0 #WIN
@@ -221,20 +231,21 @@ class AIPlayer(Player):
 			return 0.0 #LOSE
 
 		#compare food counts
-		foodResult = (myInv.foodCount - opponentInv.foodCount)/FOOD_GOAL + 0.5
+		foodResult = (myInv.foodCount)/(FOOD_GOAL)
 
 		#compare the ant counts
 		allAnts = getAntList(gameState, pid=None)
-		antResult = (len(myInv.ants) - len(opponentInv.ants))/len(allAnts) + 0.5
+		antResult = (len(myInv.ants) - len(opponentInv.ants))/(2*len(allAnts)) + 0.5
 
 		#ant values (sum of stats minus build cost)
-		workerValue = 4
-		droneValue = 6
-		soldierValue = 6
-		rangeValue = 5
+		workerValue = 4.0
+		droneValue = 6.0
+		soldierValue = 6.0
+		rangeValue = 5.0
+		queenValue = 1.0
 
 		#calculate stength of my army
-		myAntSum = 0
+		myAntSum = 0.0
 		for myAnt in myInv.ants:
 			if myAnt.type == WORKER:
 				myAntSum = myAntSum + workerValue
@@ -244,10 +255,12 @@ class AIPlayer(Player):
 				myAntSum = myAntSum + soldierValue
 			elif myAnt.type == R_SOLDIER:
 				myAntSum = myAntSum + rangeValue
+			elif myAnt.type == QUEEN:
+				myAntSum = myAntSum + queenValue
 
 		#calculate strength of opponent's army
-		oppAntSum = 0
-		for oppAnt in myInv.ants:
+		oppAntSum = 0.0
+		for oppAnt in opponentInv.ants:
 			if oppAnt.type == WORKER:
 				oppAntSum = oppAntSum + workerValue
 			elif oppAnt.type == DRONE:
@@ -256,16 +269,55 @@ class AIPlayer(Player):
 				oppAntSum = oppAntSum + soldierValue
 			elif oppAnt.type == R_SOLDIER:
 				oppAntSum = oppAntSum + rangeValue
+			elif oppAnt.type == QUEEN:
+				oppAntSum = oppAntSum + queenValue
 
-		armyStrength = (myAntSum - oppAntSum)/(myAntSum + oppAntSum) + 0.5
+		armyStrength = (myAntSum - oppAntSum)/(2*(myAntSum + oppAntSum)) + 0.5
+
+		currentHealth = 0.0
+		totalHealth = 0.0
+		for ant in opponentInv.ants:
+			currentHealth = currentHealth + ant.health
+			totalHealth = totalHealth + UNIT_STATS[ant.type][HEALTH]
+
+		hpPercent = 1.0 - currentHealth/totalHealth
+
+		distanceSum = 0.0
+		workers = 0.0
+		carryingWorkers = 0.0
+		for ant in myInv.ants:
+			if ant.type == WORKER:
+				workers = workers + 1.0
+				if ant.carrying:
+					carryingWorkers = carryingWorkers + 1.0
+					closestBuilding = self.findClosestCoord(gameState, ant.coords, buildingCoords)
+					buildingDistance = stepsToReach(gameState, ant.coords, closestBuilding)
+					distanceSum = distanceSum + buildingDistance/2.0
+				else:
+					closestFood = self.findClosestCoord(gameState, ant.coords, foodCoords)
+					foodDistance = stepsToReach(gameState, ant.coords, closestFood)
+					distanceSum = distanceSum + foodDistance
+
+		#print "{0} {1}".format(currentHealth, totalHealth)
+		#print hpPercent
+		workerRatio = 0
+		if workers > 0:
+			distanceResult = 1.0 - distanceSum/(40.0*workers)
+			workerRatio = carryingWorkers/workers
+		else:
+			distanceResult = 0.0
 
 		#weight all considerations - higher multipliers = higher weight
 		#food - 2
 		#number of ants - 1
-		result = (foodResult*2 + antResult + armyStrength)/4
+		#army strength - 1
+		result = (foodResult*5.0 + antResult + armyStrength + hpPercent + distanceResult + workerRatio)/10.0
 
-		print result
-		if result < 0 or result > 1:
+		print "{0} {1} {2} {3} {4} {5} {6}".format(2.0*foodResult, antResult, armyStrength, hpPercent, distanceResult, workerRatio, result)
+		#print "{0} {1}".format(len(myInv.ants), len(opponentInv.ants))
+
+		#print result
+		if result < 0.0 or result > 1.0:
 			print "WARNING: Eval result not within range 0:1 --> {0} ".format(result)
 
 		return result
