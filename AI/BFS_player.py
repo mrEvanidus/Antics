@@ -92,7 +92,7 @@ class AIPlayer(Player):
 	##
 	#TODO: AI should make moves according to BFS & board evaluation
 	def getMove(self, currentState):
-		#self.evaluate(currentState)
+		self.evaluate(currentState)
 		moves = listAllLegalMoves(currentState)
 		return moves[random.randint(0,len(moves) - 1)]
 
@@ -208,6 +208,7 @@ class AIPlayer(Player):
 		soldierValue = 6
 		rangeValue = 5
 
+		#calculate stength of my army
 		myAntSum = 0
 		for myAnt in myInv.ants:
 			if myAnt.type == WORKER:
@@ -219,6 +220,7 @@ class AIPlayer(Player):
 			elif myAnt.type == R_SOLDIER:
 				myAntSum = myAntSum + rangeValue
 
+		#calculate strength of opponent's army
 		oppAntSum = 0
 		for oppAnt in myInv.ants:
 			if oppAnt.type == WORKER:
@@ -236,5 +238,9 @@ class AIPlayer(Player):
 		#food - 2
 		#number of ants - 1
 		result = (foodResult*2 + antResult + armyStrength)/4
+
+		print result
+		if result < 0 or result > 1:
+			print "WARNING: Eval result not within range 0:1 --> {0} ".format(result)
 
 		return result
