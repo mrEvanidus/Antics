@@ -98,12 +98,12 @@ class AIPlayer(Player):
 		#evaluate each move and pick the best one
 		for move in moves:
 			nextState = self.genState(currentState, move)
-			print "Move: {0}".format(move)
+			#print "Move: {0}".format(move)
 			value = self.evaluate(nextState)
 			if (value > bestMoveValue):
 				bestMove = move
 				bestMoveValue = value
-		print "\n\n\n"
+		#print "\n\n\n"
 		return bestMove
 
 		#return moves[random.randint(0,len(moves) - 1)]
@@ -181,7 +181,7 @@ class AIPlayer(Player):
 		elif moveAction.moveType == BUILD:
 			# decrease the food amount for the player
 			simpleState.inventories[self.playerId].foodCount -= UNIT_STATS[moveAction.buildType][COST]
-			if simpleState.inventories[self.playerId].foodCount > 0:
+			if simpleState.inventories[self.playerId].foodCount < 0:
 				return None
 
 			#add the appropriate ant to the player's inventory
@@ -301,6 +301,9 @@ class AIPlayer(Player):
 					closestFood = self.findClosestCoord(gameState, ant.coords, foodCoords)
 					foodDistance = stepsToReach(gameState, ant.coords, closestFood)
 					distanceSum = distanceSum + foodDistance
+			elif ant.type == DRONE or ant.type == R_SOLDIER or ant.type == SOLDIER:
+				print ""
+
 
 		#print "{0} {1}".format(currentHealth, totalHealth)
 		#print hpPercent
@@ -317,9 +320,9 @@ class AIPlayer(Player):
 		#food - 2
 		#number of ants - 1
 		#army strength - 1
-		result = (foodResult*10.0 + antResult + armyStrength + hpPercent + distanceResult + workerRatio/2.0)/14.5
+		result = (foodResult*10.0 + antResult + armyStrength*5.0 + hpPercent + distanceResult + workerRatio/2.0)/19.5
 
-		print "food:{0} ant:{1} army:{2} hp:{3} distance:{4} carrrying:{5} result:{6}".format(10.0*foodResult, antResult, armyStrength, hpPercent, distanceResult, workerRatio, result)
+		#print "food:{0} ant:{1} army:{2} hp:{3} distance:{4} carrrying:{5} result:{6}".format(10.0*foodResult, antResult, armyStrength*5.0, hpPercent, distanceResult, workerRatio/2.0, result)
 		#print "antResult:{0} mine:{1} theirs:{2}".format(antResult, sumMyAnts, sumOppAnts)
 		#print "{0} {1}".format(len(myInv.ants), len(opponentInv.ants))
 
