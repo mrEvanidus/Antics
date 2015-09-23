@@ -90,7 +90,6 @@ class AIPlayer(Player):
 	#
 	#Return: The Move to be made
 	##
-	#TODO: AI should make moves according to BFS & board evaluation
 	def getMove(self, currentState):
 		moves = listAllLegalMoves(currentState)
 
