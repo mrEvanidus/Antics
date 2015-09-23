@@ -313,7 +313,7 @@ class AIPlayer(Player):
 		#army strength - 1
 		result = (foodResult*5.0 + antResult + armyStrength + hpPercent + distanceResult + workerRatio)/10.0
 
-		print "{0} {1} {2} {3} {4} {5} {6}".format(2.0*foodResult, antResult, armyStrength, hpPercent, distanceResult, workerRatio, result)
+		#print "{0} {1} {2} {3} {4} {5} {6}".format(2.0*foodResult, antResult, armyStrength, hpPercent, distanceResult, workerRatio, result)
 		#print "{0} {1}".format(len(myInv.ants), len(opponentInv.ants))
 
 		#print result

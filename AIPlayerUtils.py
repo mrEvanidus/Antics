@@ -151,14 +151,13 @@ def getAntAt(state, coords):
 #
 # Parameters:
 #     coord    - a tuple containing a valid x,y coordinate
-#     reqEmpty - if 'true' listAdjacent will skip cells that are occupied
 #
 # Return: a list of all legal coords that are adjacent to the given space
 #
 def listAdjacent(coord):
     #catch invalid inputs
     if (not legalCoord(coord)):
-        return []
+        return [];
 
     #this set of coord deltas represent movement in each cardinal direction
     deltas = [ (-1, 0), (1, 0), (0, -1), (0, 1) ]
@@ -207,31 +206,6 @@ def listReachableAdjacent(state, coords, movement):
             candMoves.append(cell)
 
     return candMoves
-
-##
-# listReachableAdjacentOLD
-#
-# calculates all the adjacent cells that can be reached from a given coord.
-#
-# Parameters:
-#    currentState - current game state
-#    coords       - where the ant is
-#    movement     - movement points ant has
-#
-# Return:  a list of coords (tuples)   
-def listReachableAdjacentOLD(currentState, coords, movement):
-    #build a list of all adjacent cells
-    oneStep = listAdjacent(coords)
-
-    #winnow the list based upon cell contents and cost to reach
-    candMoves = []
-    for cell in oneStep:
-        loc = currentState.board[cell[0]][cell[1]]
-        if (loc.ant == None) and (loc.getMoveCost() <= movement):
-            candMoves.append(cell)
-
-    return candMoves
-
 
 ##
 # listAllMovementPaths              <!-- RECURSIVE -->
