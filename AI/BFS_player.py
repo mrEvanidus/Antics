@@ -98,10 +98,12 @@ class AIPlayer(Player):
 		#evaluate each move and pick the best one
 		for move in moves:
 			nextState = self.genState(currentState, move)
+			print "Move: {0}".format(move)
 			value = self.evaluate(nextState)
 			if (value > bestMoveValue):
 				bestMove = move
-
+				bestMoveValue = value
+		print "\n\n\n"
 		return bestMove
 
 		#return moves[random.randint(0,len(moves) - 1)]
@@ -230,11 +232,14 @@ class AIPlayer(Player):
 			return 0.0 #LOSE
 
 		#compare food counts
-		foodResult = (myInv.foodCount)/(FOOD_GOAL)
+		foodResult = (float(myInv.foodCount))/(float(FOOD_GOAL))
 
 		#compare the ant counts
 		allAnts = getAntList(gameState, pid=None)
-		antResult = (len(myInv.ants) - len(opponentInv.ants))/(2*len(allAnts)) + 0.5
+		sumMyAnts = float(len(myInv.ants))
+		sumOppAnts = float(len(opponentInv.ants))
+		sumAllAnts = float(len(allAnts))
+		antResult = (sumMyAnts - sumOppAnts)/(2*sumAllAnts) + 0.5
 
 		#ant values (sum of stats minus build cost)
 		workerValue = 4.0
@@ -299,9 +304,11 @@ class AIPlayer(Player):
 
 		#print "{0} {1}".format(currentHealth, totalHealth)
 		#print hpPercent
-		workerRatio = 0
+		workerRatio = 0.0
 		if workers > 0:
-			distanceResult = 1.0 - distanceSum/(40.0*workers)
+			distanceResult = 1.0 - distanceSum/(40*workers)
+			if distanceResult < 0.0:
+				distanceResult = 0.0
 			workerRatio = carryingWorkers/workers
 		else:
 			distanceResult = 0.0
@@ -310,14 +317,15 @@ class AIPlayer(Player):
 		#food - 2
 		#number of ants - 1
 		#army strength - 1
-		result = (foodResult*5.0 + antResult + armyStrength + hpPercent + distanceResult + workerRatio)/10.0
+		result = (foodResult*10.0 + antResult + armyStrength + hpPercent + distanceResult + workerRatio/2.0)/14.5
 
-		#print "{0} {1} {2} {3} {4} {5} {6}".format(2.0*foodResult, antResult, armyStrength, hpPercent, distanceResult, workerRatio, result)
+		print "food:{0} ant:{1} army:{2} hp:{3} distance:{4} carrrying:{5} result:{6}".format(10.0*foodResult, antResult, armyStrength, hpPercent, distanceResult, workerRatio, result)
+		#print "antResult:{0} mine:{1} theirs:{2}".format(antResult, sumMyAnts, sumOppAnts)
 		#print "{0} {1}".format(len(myInv.ants), len(opponentInv.ants))
 
 		#print result
 		if result < 0.0 or result > 1.0:
-			print "WARNING: Eval result not within range 0:1 --> {0} ".format(result)
+			print "WARNING: Evaluation result not within range 0:1 --> {0} ".format(result)
 
 		return result
 
