@@ -231,6 +231,8 @@ class AIPlayer(Player):
 		if opponentInv.foodCount == 11 or myInv.getQueen() == None:
 			return 0.0 #LOSE
 
+		enemyQueenCoords = opponentInv.getQueen().coords
+
 		#compare food counts
 		foodResult = (float(myInv.foodCount))/(float(FOOD_GOAL))
 
@@ -302,7 +304,7 @@ class AIPlayer(Player):
 					foodDistance = stepsToReach(gameState, ant.coords, closestFood)
 					distanceSum = distanceSum + foodDistance
 			elif ant.type == DRONE or ant.type == R_SOLDIER or ant.type == SOLDIER:
-				print ""
+				distanceSum = distanceSum + stepsToReach(gameState, ant.coords, enemyQueenCoords)
 
 
 		#print "{0} {1}".format(currentHealth, totalHealth)
@@ -320,7 +322,7 @@ class AIPlayer(Player):
 		#food - 2
 		#number of ants - 1
 		#army strength - 1
-		result = (foodResult*10.0 + antResult + armyStrength*5.0 + hpPercent + distanceResult + workerRatio/2.0)/19.5
+		result = (foodResult*10.0 + antResult + armyStrength*8.0 + hpPercent + distanceResult + workerRatio/2.0)/22.5
 
 		#print "food:{0} ant:{1} army:{2} hp:{3} distance:{4} carrrying:{5} result:{6}".format(10.0*foodResult, antResult, armyStrength*5.0, hpPercent, distanceResult, workerRatio/2.0, result)
 		#print "antResult:{0} mine:{1} theirs:{2}".format(antResult, sumMyAnts, sumOppAnts)
