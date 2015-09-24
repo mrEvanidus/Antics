@@ -27,7 +27,7 @@ class AIPlayer(Player):
 	#   inputPlayerId - The id to give the new player (int)
 	##
 	def __init__(self, inputPlayerId):
-		super(AIPlayer,self).__init__(inputPlayerId, "Reward/Punishment AI")
+		super(AIPlayer,self).__init__(inputPlayerId, "Jet Drones Can't Melt Steel Queens")
 
 	##
 	#getPlacement
@@ -367,6 +367,6 @@ nextState = player.genState(state, move)
 #check if ant made it to that destination
 antDest = getAntAt(nextState,(0,2))
 if(antDest.type == WORKER):
-	print "Unit Test #1 Passed"
+	print "Jet Drones Can't Melt Steel Queens: Unit Test #1 Passed"
 else:
 	print "Error has occurred in Unit Test"
