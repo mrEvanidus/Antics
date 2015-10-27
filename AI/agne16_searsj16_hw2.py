@@ -4,7 +4,9 @@ from Constants import *
 from Construction import CONSTR_STATS
 from Ant import *
 from Move import Move
-from GameState import addCoords
+from GameState import *
+from Location import *
+from Inventory import *
 from AIPlayerUtils import *
 
 ##
@@ -25,7 +27,7 @@ class AIPlayer(Player):
 	#   inputPlayerId - The id to give the new player (int)
 	##
 	def __init__(self, inputPlayerId):
-		super(AIPlayer,self).__init__(inputPlayerId, "Reward/Punishment AI")
+		super(AIPlayer,self).__init__(inputPlayerId, "Jet Drones Can't Melt Steel Queens")
 
 	##
 	#getPlacement
@@ -98,15 +100,11 @@ class AIPlayer(Player):
 		#evaluate each move and pick the best one
 		for move in moves:
 			nextState = self.genState(currentState, move)
-			#print "Move: {0}".format(move)
 			value = self.evaluate(nextState)
 			if (value > bestMoveValue):
 				bestMove = move
 				bestMoveValue = value
-		#print "\n\n\n"
 		return bestMove
-
-		#return moves[random.randint(0,len(moves) - 1)]
 
 	##
 	#getAttack
@@ -177,7 +175,6 @@ class AIPlayer(Player):
 					movingAnt.carrying = False
 					simpleState.inventories[self.playerId].foodCount += 1
 
-
 		elif moveAction.moveType == BUILD:
 			# decrease the food amount for the player
 			simpleState.inventories[self.playerId].foodCount -= UNIT_STATS[moveAction.buildType][COST]
@@ -213,11 +210,13 @@ class AIPlayer(Player):
 			opponentId = 1
 		opponentInv = gameState.inventories[opponentId]
 
+		#get a list of tuple coordinates of my constructs
 		buildings = getConstrList(gameState, self.playerId, (ANTHILL, TUNNEL))
 		buildingCoords = []
 		buildingCoords.append(buildings[0].coords)
 		buildingCoords.append(buildings[1].coords)
 
+		#get a list of tuple coordinates of all food on board
 		food = getConstrList(gameState, None, (FOOD, ))
 		foodCoords = []
 		for foodObj in food:
@@ -231,6 +230,7 @@ class AIPlayer(Player):
 		if opponentInv.foodCount == 11 or myInv.getQueen() == None:
 			return 0.0 #LOSE
 
+		#find and store coordinates of enemy queen
 		enemyQueenCoords = opponentInv.getQueen().coords
 
 		#compare food counts
@@ -243,7 +243,7 @@ class AIPlayer(Player):
 		sumAllAnts = float(len(allAnts))
 		antResult = (sumMyAnts - sumOppAnts)/(2*sumAllAnts) + 0.5
 
-		#ant values (sum of stats minus build cost)
+		#define a value for each ant type (sum of stats minus build cost)
 		workerValue = 4.0
 		droneValue = 6.0
 		soldierValue = 6.0
@@ -263,7 +263,6 @@ class AIPlayer(Player):
 				myAntSum = myAntSum + rangeValue
 			elif myAnt.type == QUEEN:
 				myAntSum = myAntSum + queenValue
-
 		#calculate strength of opponent's army
 		oppAntSum = 0.0
 		for oppAnt in opponentInv.ants:
@@ -277,23 +276,24 @@ class AIPlayer(Player):
 				oppAntSum = oppAntSum + rangeValue
 			elif oppAnt.type == QUEEN:
 				oppAntSum = oppAntSum + queenValue
-
 		armyStrength = (myAntSum - oppAntSum)/(2*(myAntSum + oppAntSum)) + 0.5
 
+		#compare how many hit points enemy has vs total possible
 		currentHealth = 0.0
 		totalHealth = 0.0
 		for ant in opponentInv.ants:
 			currentHealth = currentHealth + ant.health
 			totalHealth = totalHealth + UNIT_STATS[ant.type][HEALTH]
-
 		hpPercent = 1.0 - currentHealth/totalHealth
 
+		#evaulate an ant's distance from it's goal
 		distanceSum = 0.0
 		workers = 0.0
 		carryingWorkers = 0.0
 		for ant in myInv.ants:
 			if ant.type == WORKER:
-				workers = workers + 1.0
+				workers = workers + 1.0	#keep count of how many workers we have
+				#calculate distance ants are from food/building and keep a sum of the steps
 				if ant.carrying:
 					carryingWorkers = carryingWorkers + 1.0
 					closestBuilding = self.findClosestCoord(gameState, ant.coords, buildingCoords)
@@ -303,12 +303,11 @@ class AIPlayer(Player):
 					closestFood = self.findClosestCoord(gameState, ant.coords, foodCoords)
 					foodDistance = stepsToReach(gameState, ant.coords, closestFood)
 					distanceSum = distanceSum + foodDistance
+			#all ants except worker and queen should pursue the enemy queen
 			elif ant.type == DRONE or ant.type == R_SOLDIER or ant.type == SOLDIER:
 				distanceSum = distanceSum + stepsToReach(gameState, ant.coords, enemyQueenCoords)
 
-
-		#print "{0} {1}".format(currentHealth, totalHealth)
-		#print hpPercent
+		#compare how many of our workers are carrying vs not carrying
 		workerRatio = 0.0
 		if workers > 0:
 			distanceResult = 1.0 - distanceSum/(40*workers)
@@ -319,18 +318,7 @@ class AIPlayer(Player):
 			distanceResult = 0.0
 
 		#weight all considerations - higher multipliers = higher weight
-		#food - 2
-		#number of ants - 1
-		#army strength - 1
 		result = (foodResult*10.0 + antResult + armyStrength*8.0 + hpPercent + distanceResult + workerRatio/2.0)/22.5
-
-		#print "food:{0} ant:{1} army:{2} hp:{3} distance:{4} carrrying:{5} result:{6}".format(10.0*foodResult, antResult, armyStrength*5.0, hpPercent, distanceResult, workerRatio/2.0, result)
-		#print "antResult:{0} mine:{1} theirs:{2}".format(antResult, sumMyAnts, sumOppAnts)
-		#print "{0} {1}".format(len(myInv.ants), len(opponentInv.ants))
-
-		#print result
-		if result < 0.0 or result > 1.0:
-			print "WARNING: Evaluation result not within range 0:1 --> {0} ".format(result)
 
 		return result
 
@@ -357,3 +345,28 @@ class AIPlayer(Player):
 				lastDist = currentDist
 
 		return result
+
+#Unit Test #1: Tests whether an ant correctly moves to a space
+#create a worker ant on the board
+ant = Ant((0,0), WORKER, 0)
+
+#initialize the parameters needed to create a gamestate
+board = [[Location((col, row)) for row in xrange(0,BOARD_LENGTH)] for col in xrange(0,BOARD_LENGTH)]
+p1Inventory = Inventory(PLAYER_ONE, [ant], [], 0)
+p2Inventory = Inventory(PLAYER_TWO, [], [], 0)
+neutralInventory = Inventory(NEUTRAL, [], [], 0)
+state = GameState(board, [p1Inventory, p2Inventory, neutralInventory], MENU_PHASE, PLAYER_ONE)
+
+#ant will move two spaces down
+move = Move(MOVE_ANT, [(0,0),(0,1),(0,2)], None)
+
+#create new AI instance and use next move algorithm
+player = AIPlayer(0)
+nextState = player.genState(state, move)
+
+#check if ant made it to that destination
+antDest = getAntAt(nextState,(0,2))
+if(antDest.type == WORKER):
+	print "Jet Drones Can't Melt Steel Queens: Unit Test #1 Passed"
+else:
+	print "Error has occurred in Unit Test"
