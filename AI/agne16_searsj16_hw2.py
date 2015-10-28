@@ -346,27 +346,27 @@ class AIPlayer(Player):
 
 		return result
 
-#Unit Test #1: Tests whether an ant correctly moves to a space
-#create a worker ant on the board
-ant = Ant((0,0), WORKER, 0)
-
-#initialize the parameters needed to create a gamestate
-board = [[Location((col, row)) for row in xrange(0,BOARD_LENGTH)] for col in xrange(0,BOARD_LENGTH)]
-p1Inventory = Inventory(PLAYER_ONE, [ant], [], 0)
-p2Inventory = Inventory(PLAYER_TWO, [], [], 0)
-neutralInventory = Inventory(NEUTRAL, [], [], 0)
-state = GameState(board, [p1Inventory, p2Inventory, neutralInventory], MENU_PHASE, PLAYER_ONE)
-
-#ant will move two spaces down
-move = Move(MOVE_ANT, [(0,0),(0,1),(0,2)], None)
-
-#create new AI instance and use next move algorithm
-player = AIPlayer(0)
-nextState = player.genState(state, move)
-
-#check if ant made it to that destination
-antDest = getAntAt(nextState,(0,2))
-if(antDest.type == WORKER):
-	print "Jet Drones Can't Melt Steel Queens: Unit Test #1 Passed"
-else:
-	print "Error has occurred in Unit Test"
+# #Unit Test #1: Tests whether an ant correctly moves to a space
+# #create a worker ant on the board
+# ant = Ant((0,0), WORKER, 0)
+#
+# #initialize the parameters needed to create a gamestate
+# board = [[Location((col, row)) for row in xrange(0,BOARD_LENGTH)] for col in xrange(0,BOARD_LENGTH)]
+# p1Inventory = Inventory(PLAYER_ONE, [ant], [], 0)
+# p2Inventory = Inventory(PLAYER_TWO, [], [], 0)
+# neutralInventory = Inventory(NEUTRAL, [], [], 0)
+# state = GameState(board, [p1Inventory, p2Inventory, neutralInventory], MENU_PHASE, PLAYER_ONE)
+#
+# #ant will move two spaces down
+# move = Move(MOVE_ANT, [(0,0),(0,1),(0,2)], None)
+#
+# #create new AI instance and use next move algorithm
+# player = AIPlayer(0)
+# nextState = player.genState(state, move)
+#
+# #check if ant made it to that destination
+# antDest = getAntAt(nextState,(0,2))
+# if(antDest.type == WORKER):
+# 	print "Jet Drones Can't Melt Steel Queens: Unit Test #1 Passed"
+# else:
+# 	print "Error has occurred in Unit Test"

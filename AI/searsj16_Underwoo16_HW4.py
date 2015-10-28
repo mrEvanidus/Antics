@@ -852,37 +852,37 @@ def equalStates(state1, state2):
 
 
 
-# #
-# Unit Test
-# Description: Test's that given a game state, that it expands accordingly, and evaluates that state correctly.
-# #
-board = [[Location((col, row)) for row in xrange(0, BOARD_LENGTH)] for col in xrange(0, BOARD_LENGTH)]
-p1Inventory = Inventory(PLAYER_ONE, [], [], 0)
-p2Inventory = Inventory(PLAYER_TWO, [], [], 0)
-neutralInventory = Inventory(NEUTRAL, [], [], 0)
-
-putFood(neutralInventory)
-putOurInventory(p1Inventory)
-putTheirInventory(p2Inventory)
-
-state = GameState(board, [p1Inventory, p2Inventory, neutralInventory], PLAY_PHASE, PLAYER_ONE)
-expectedState = state.fastclone()
-expectedState.inventories[PLAYER_TWO].ants = []
-
-
-ourAI = AIPlayer(PLAYER_ONE)
-
-move = Move(MOVE_ANT,[(0,6)], None)
-retrievedState = ourAI.expandNode(state, move)
-
-if equalStates(retrievedState, expectedState):
-	score = ourAI.evaluateState(retrievedState)
-	if score == 1.0:
-		print "Unit Test #1 Passed"
-	else:
-		print "UNIT TEST #1 FAILED"
-else:
-	print "UNIT TEST #1 FAILED: STATES NOT THE SAME."
+# # #
+# # Unit Test
+# # Description: Test's that given a game state, that it expands accordingly, and evaluates that state correctly.
+# # #
+# board = [[Location((col, row)) for row in xrange(0, BOARD_LENGTH)] for col in xrange(0, BOARD_LENGTH)]
+# p1Inventory = Inventory(PLAYER_ONE, [], [], 0)
+# p2Inventory = Inventory(PLAYER_TWO, [], [], 0)
+# neutralInventory = Inventory(NEUTRAL, [], [], 0)
+#
+# putFood(neutralInventory)
+# putOurInventory(p1Inventory)
+# putTheirInventory(p2Inventory)
+#
+# state = GameState(board, [p1Inventory, p2Inventory, neutralInventory], PLAY_PHASE, PLAYER_ONE)
+# expectedState = state.fastclone()
+# expectedState.inventories[PLAYER_TWO].ants = []
+#
+#
+# ourAI = AIPlayer(PLAYER_ONE)
+#
+# move = Move(MOVE_ANT,[(0,6)], None)
+# retrievedState = ourAI.expandNode(state, move)
+#
+# if equalStates(retrievedState, expectedState):
+# 	score = ourAI.evaluateState(retrievedState)
+# 	if score == 1.0:
+# 		print "Unit Test #1 Passed"
+# 	else:
+# 		print "UNIT TEST #1 FAILED"
+# else:
+# 	print "UNIT TEST #1 FAILED: STATES NOT THE SAME."
 
 
 

@@ -30,11 +30,13 @@ class AIPlayer(Player):
     def __init__(self, inputPlayerId):
         super(AIPlayer, self).__init__(inputPlayerId, "Genetic Player")
         self.limit = 5
+        self.firstMove = True
 
         # vars to support genetic algorithms
-        self.POPULATION_SIZE = 2
+        self.POPULATION_SIZE = 32
         self.GENERATION_CAP = 20
-        self.NUM_GAMES = 3
+        self.NUM_GAMES = 10
+        self.RANDOM_NUMBER_CAP = 1000
         self.gamesPlayed = 0
         self.population = []
         self.nextGeneIdx = 0
@@ -56,7 +58,7 @@ class AIPlayer(Player):
     def generateRandomGene(self):
         sequence = []
         for i in range(40):
-            sequence.append(random.randint(0, 1000))
+            sequence.append(random.randint(0, self.RANDOM_NUMBER_CAP))
 
         return sequence
 
@@ -69,21 +71,59 @@ class AIPlayer(Player):
         child1 = parent1[:slice] + parent2[slice:]
         child2 = parent2[:slice] + parent1[slice:]
 
+        #implement a 2% mutation rate for each child
+        if random.randint(0, 100) >= 99:
+            self.mutate(child1)
+        if random.randint(0, 100) >= 99:
+            self.mutate(child2)
+
         return child1, child2
+
+    ##
+    # TODO
+    ##
+    def mutate(self, gene):
+        gene[random.randint(0, 39)] = random.randint(0, self.RANDOM_NUMBER_CAP)
 
     ##
     # TODO
     ##
     def newGeneration(self):
 
-        # for now, our population contains 2 genes
-        parent1 = self.population[0]
-        parent2 = self.population[1]
+        fitnessCopy = self.fitness[:]
+        #get the top half of the population (elite)
+        maxIndices = []
+        for i in range(self.POPULATION_SIZE/2):
+            maxIdx = 0
+            for j in range(len(fitnessCopy)):
+                if fitnessCopy[maxIdx] < fitnessCopy[j]:
+                    maxIdx = j
+            maxIndices.append(maxIdx)
+            fitnessCopy[maxIdx] = float("-inf")
 
-        # generate next generation
-        child1, child2 = self.mate(parent1, parent2)
 
-        population = [child1, child2]
+        # generate next generation randomly from the top 50% of parents
+        children = []
+        for i in range(self.POPULATION_SIZE/4):
+            randIdx1 = random.randint(0, len(maxIndices)-1)
+            randIdx2 = random.randint(0, len(maxIndices)-1)
+
+            # avoid cloning
+            while(randIdx1 == randIdx2):
+                randIdx2 = random.randint(0, len(maxIndices)-1)
+
+            child1, child2 = self.mate(self.population[randIdx1], self.population[randIdx2])
+            children.append(child1)
+            children.append(child2)
+
+        # create the next generation using the children and the elite parents
+        newPopulation = children[:]
+        for idx in maxIndices:
+            newPopulation.append(self.population[idx])
+
+        # reset the fitness array
+        for i in range(len(self.fitness)):
+            self.fitness[i] = 0
 
     # createNode
     # Description: Creates a new node in the form of a dictionary
@@ -268,7 +308,7 @@ class AIPlayer(Player):
                     result.append((x, y))
 
                 # don't visit this place again
-                gene[minIdx] = 1001
+                gene[minIdx] = self.RANDOM_NUMBER_CAP + 1
 
             return result
 
@@ -288,6 +328,13 @@ class AIPlayer(Player):
     # Return: The Move to be made
     # #
     def getMove(self, currentState):
+
+        # on the first move of every game, print the state
+        if self.firstMove:
+            asciiPrintState(currentState)
+            print "\n"
+            self.firstMove = False
+
         # creates a node of the current state
         currentNode = self.createNode(None, currentState, 0, None)
 
@@ -840,6 +887,11 @@ class AIPlayer(Player):
 
         # create new generation
         if self.nextGeneIdx >= self.POPULATION_SIZE:
+            print "Fitnesses:", self.fitness
             self.newGeneration()
             self.nextGeneIdx = 0
-            print "Fitnesses:", self.fitness
+
+
+        #reset the first move
+        self.firstMove = True
+
