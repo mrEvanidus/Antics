@@ -9,7 +9,6 @@ from GameState import *
 from Location import *
 from Inventory import *
 from Construction import *
-import difflib
 
 
 # #
@@ -928,5 +927,3 @@ class AIPlayer(Player):
 
         #reset the first move
         self.firstMove = True
-
-
