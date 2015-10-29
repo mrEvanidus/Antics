@@ -28,7 +28,7 @@ class AIPlayer(Player):
     #    inputPlayerId - The id to give the new player (int)
     # #
     def __init__(self, inputPlayerId):
-        super(AIPlayer, self).__init__(inputPlayerId, "Bottom of the Gene Pool")
+        super(AIPlayer, self).__init__(inputPlayerId, "Attack of the Clone")
         self.limit = 5
         self.firstMove = True
 
@@ -365,10 +365,10 @@ class AIPlayer(Player):
     def getMove(self, currentState):
 
         # on the first move of every game, print the state
-        if self.firstMove:
-            asciiPrintState(currentState)
-            print "\n"
-            self.firstMove = False
+        # if self.firstMove:
+            # asciiPrintState(currentState)
+            # print "\n"
+            # self.firstMove = False
 
         # creates a node of the current state
         currentNode = self.createNode(None, currentState, 0, None)
