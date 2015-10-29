@@ -9,11 +9,12 @@ from GameState import *
 from Location import *
 from Inventory import *
 from Construction import *
+import difflib
 
 
 # #
 # AIPlayer
-# Description: The responsbility of this class is to interact with the game by
+# Description: The responsibility of this class is to interact with the game by
 # deciding a valid move based on a given game state. This class has methods that
 # will be implemented by students in Dr. Nuxoll's AI course.
 #
@@ -34,7 +35,7 @@ class AIPlayer(Player):
 
         # vars to support genetic algorithms
         self.POPULATION_SIZE = 32
-        self.GENERATION_CAP = 20
+        self.GENERATION_CAP = 20 #currently unused
         self.NUM_GAMES = 10
         self.RANDOM_NUMBER_CAP = 1000
         self.gamesPlayed = 0
@@ -44,7 +45,12 @@ class AIPlayer(Player):
         self.geneInit(self.population, self.fitness)
 
     ##
-    # TODO: comment
+    # geneInit
+    # Description: Initializes a random population
+    #
+    # Parameters:
+    #     pop - the population to populate
+    #     fit - array of ints to populate with fitness's
     ##
     def geneInit(self, pop, fit):
         for i in range(self.POPULATION_SIZE):
@@ -53,7 +59,10 @@ class AIPlayer(Player):
             fit.append(0)
 
     ##
-    # TODO: comment
+    # generateRandomGene
+    # Description: generates a gene filled with random numbers between 0 and RANDOM_NUMBER_CAP
+    #
+    # Returns: an array of integers between 0 and RANDOM_NUMBER_CAP
     ##
     def generateRandomGene(self):
         sequence = []
@@ -63,35 +72,62 @@ class AIPlayer(Player):
         return sequence
 
     ##
-    # TODO
+    # mate
+    # Description: mates two genes together to produce two children
+    #
+    # Parameters:
+    #     parent1, parent2 - parent genes to mate, as arrays of integers
+    #     debug - if True, the method will print the mating process
+    #
+    # Returns:
+    #     child1, child2 - the two children which are the result of splicing.
     ##
-    def mate(self, parent1, parent2):
+    def mate(self, parent1, parent2, debug=False):
         # slice randomly in the middle part of the gene
-        slice = random.randint(9, 30)
-        child1 = parent1[:slice] + parent2[slice:]
-        child2 = parent2[:slice] + parent1[slice:]
+        split = random.randint(9, 30)
+        child1 = parent1[:split] + parent2[split:]
+        child2 = parent2[:split] + parent1[split:]
+
+
 
         #implement a 2% mutation rate for each child
         if random.randint(0, 100) >= 99:
+            if debug: print "Mutating child 1"
             self.mutate(child1)
         if random.randint(0, 100) >= 99:
+            if debug: print "Mutating child 2"
             self.mutate(child2)
+
+         # print a debug message if prompted
+        if debug:
+            print "Parent 1:", parent1[:split], "\n+\n", parent1[split:]
+            print "------------------------------------------------------------------------------------"
+            print "Parent 2:", parent2[:split], "\n+\n", parent2[split:]
+            print "===================================================================================="
+            print "Child 1:", child1[:split], "\n+\n", child1[split:]
+            print "------------------------------------------------------------------------------------"
+            print "Child 2:", child2[:split], "\n+\n", child2[split:]
 
         return child1, child2
 
     ##
-    # TODO
+    # mutate
+    # Description: mutates a random element in a gene sequence
+    #
+    # Parameters: gene - the gene to mutate
     ##
     def mutate(self, gene):
         gene[random.randint(0, 39)] = random.randint(0, self.RANDOM_NUMBER_CAP)
 
     ##
-    # TODO
+    # newGeneration
+    # Description: creates a new generation from the current one
     ##
     def newGeneration(self):
-
+        # copy fitness list so we don't write over it
         fitnessCopy = self.fitness[:]
-        #get the top half of the population (elite)
+
+        #get the top half of the population (elite parents)
         maxIndices = []
         for i in range(self.POPULATION_SIZE/2):
             maxIdx = 0
@@ -101,17 +137,17 @@ class AIPlayer(Player):
             maxIndices.append(maxIdx)
             fitnessCopy[maxIdx] = float("-inf")
 
-
-        # generate next generation randomly from the top 50% of parents
+        # randomly select parents to mate
         children = []
         for i in range(self.POPULATION_SIZE/4):
             randIdx1 = random.randint(0, len(maxIndices)-1)
             randIdx2 = random.randint(0, len(maxIndices)-1)
 
             # avoid cloning
-            while(randIdx1 == randIdx2):
+            while randIdx1 == randIdx2:
                 randIdx2 = random.randint(0, len(maxIndices)-1)
 
+            # mate the selected parents
             child1, child2 = self.mate(self.population[randIdx1], self.population[randIdx2])
             children.append(child1)
             children.append(child2)
@@ -373,7 +409,7 @@ class AIPlayer(Player):
         ourInventory = gameState.inventories[currentState.whoseTurn]
         opponentId = self.getOpponentId(currentState)
 
-        if (move.moveType == MOVE_ANT):
+        if move.moveType == MOVE_ANT:
             antToMove = None
             for ant in ourInventory.ants:
                 if ant.coords == move.coordList[0]:
@@ -388,23 +424,23 @@ class AIPlayer(Player):
                 ## Checks if can attack.
                 self.attackSequence(enemyInv, antToMove)
 
-        elif (move.moveType == BUILD):
+        elif move.moveType == BUILD:
             # just worried about building Ants and Tunnel
-            if (move.buildType == WORKER):
+            if move.buildType == WORKER:
                 # add ant
                 ourInventory.ants.append(Ant(move.coordList[-1], WORKER, currentState.whoseTurn))
                 # subtract food
                 ourInventory.foodCount -= 1
-            elif (move.buildType == DRONE):
+            elif move.buildType == DRONE:
                 ourInventory.ants.append(Ant(move.coordList[-1], DRONE, currentState.whoseTurn))
                 ourInventory.foodCount -= 1
-            elif (move.buildType == SOLDIER):
+            elif move.buildType == SOLDIER:
                 ourInventory.ants.append(Ant(move.coordList[-1], SOLDIER, currentState.whoseTurn))
                 ourInventory.foodCount -= 2
-            elif (move.buildType == R_SOLDIER):
+            elif move.buildType == R_SOLDIER:
                 ourInventory.ants.append(Ant(move.coordList[-1], R_SOLDIER, currentState.whoseTurn))
                 ourInventory.foodCount -= 2
-            elif (move.buildType == TUNNEL):
+            elif move.buildType == TUNNEL:
                 ourInventory.constrs.append(Building(move.coordList[-1], TUNNEL, currentState.whoseTurn))
                 ourInventory.foodCount -= 3
         else:
@@ -425,7 +461,6 @@ class AIPlayer(Player):
     # Return: The opponent's ID
     # #
     def getOpponentId(self, currentState):
-        opponentId = -1
         if currentState.whoseTurn == 0:
             opponentId = 1
         else:
@@ -887,11 +922,11 @@ class AIPlayer(Player):
 
         # create new generation
         if self.nextGeneIdx >= self.POPULATION_SIZE:
-            print "Fitnesses:", self.fitness
+            # print "Fitnesses:", self.fitness
             self.newGeneration()
             self.nextGeneIdx = 0
 
-
         #reset the first move
         self.firstMove = True
+
 
