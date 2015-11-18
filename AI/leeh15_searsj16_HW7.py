@@ -32,12 +32,14 @@ class AIPlayer(Player):
         super(AIPlayer,self).__init__(inputPlayerId, "Thinker")
         self.ALPHA = 1
         self.limit = 5
+        self.NUM_NODES = 9 #8 hidden nodes, NUM_NODES[8] is the output
 
         # with 8 nodes, there should be 81 weights in this array.
         # x = 8*8 (inputs->nodes) + 1*8 (node bias) +
         #       8*1 (nodes->output) + 1*1 (output bias) = 81 weights
         self.networkWeights = []
-        self.NUM_NODES = 9 #NUM_NODES[8] is the output
+        self.generateRandomNetworkWeights()
+
 
     # createNode
     # Description: Creates a new node in the form of a dictionary
@@ -459,9 +461,23 @@ class AIPlayer(Player):
         scores.append(self.evalWorkerNotCarrying(gameState, ourInv))
         scores.append(self.evalQueenPosition(ourInv))
 
+        scoreSum = 0.0
+        for score in scores:
+            scoreSum += score
 
-        score = 0.0
-        return score
+        target = scoreSum/8.0
+
+        outputs = self.propagateNeuralNetwork(scores)
+        self.backPropagateNeuralNetwork(target, outputs, scores)
+        error = outputs[self.NUM_NODES -1] - target
+        print "Error = ", abs(error)
+        if abs(error) < 0.03:
+            string = "["
+            for w in self.networkWeights:
+                string += " {0:.3f} ".format(w)
+            print string, "]"
+
+        return target
 
     # #
     # CheckIfWon
@@ -803,11 +819,46 @@ class AIPlayer(Player):
 
         return nodeVals
 
-    # our g-fn
+    # #
+    # g
+    # Description: applies the 'g' function used by our neural network
+    #
+    # Parameters:
+    #   x - the variable to apply g to
+    #
+    # Return: g(x)
+    # #
     def g(self, x):
         return 1/(1+math.exp(-x))
 
+    # #
+    # generateRandomNetworkWeights
+    # Description: populates the weights list with random numbers
+    #
+    # Parameters: none
+    #
+    # Return: none
+    # #
+    def generateRandomNetworkWeights(self):
+        weightCounts = self.NUM_NODES**2
+        for i in range(weightCounts):
+            # random float between -5 and 5
+            self.networkWeights.append(random.random()*10.0-5.0)
+
+    # #
+    # backPropagateNeuralNetwork
+    # Description: edit the weights of the network based on a target output
+    #
+    # Parameters:
+    #   target - the expected output, for generating an error term
+    #   outputs - a list of outputs from our nodes. The last element is our network output.
+    #   inputs - a list of the inputs to our neural network, as they were applied to the network
+    #
+    # Return: nodeVals[8] is the sole output of the network
+    # #
     def backPropagateNeuralNetwork(self, target, outputs, inputs ):
+
+        # calculate error for the output node
         err = target - outputs[self.NUM_NODES-1]
         delta = outputs[self.NUM_NODES-1]*(1-outputs[self.NUM_NODES-1])*err
         counter = self.NUM_NODES-1 + (self.NUM_NODES-1)*len(inputs)
@@ -837,117 +888,21 @@ class AIPlayer(Player):
 
 ## Unit Tests
 
-
-# #
-# putFood
-# Description: places the Food for our set up for our gameState for the Unit Test
-#
-# Parameters:
-#   neutralInventory - the inventory where grass and food is placed
-#
-# Return: Nothing
-# #
-def putFood(neutralInventory):
-    for i in range(0,9):
-        ourGrass = Construction((i, 0), GRASS)
-        otherGrass = Construction((i,9), GRASS)
-        neutralInventory.constrs.append(ourGrass)
-        neutralInventory.constrs.append(otherGrass)
-    for i in range(0,2):
-        ourFood = Construction((i,1), FOOD)
-        otherFood = Construction((i,8), FOOD)
-        neutralInventory.constrs.append(ourFood)
-        neutralInventory.constrs.append(otherFood)
-
-
-# #
-# putOurInventory
-# Description: places the ants and anthill for our set up for our AI's inventory for the gameState for the Unit Test
-#
-# Parameters:
-#   inventory - the inventory for our AI.
-#
-# Return: Nothing
-# #
-def putOurInventory(inventory):
-    inventory.constrs.append(Construction((0,3), ANTHILL))
-    inventory.constrs.append(Construction((1,3), TUNNEL))
-    inventory.ants.append(Ant((0,3), QUEEN, PLAYER_ONE)) # Queen
-    inventory.ants.append(Ant((0,6), DRONE, PLAYER_ONE)) # Queen
-
-
-# #
-# putTheirInventory
-# Description: places the ants and anthill for our set up for our opponent's inventory
-# for the gameState for the Unit Test
-#
-# Parameters:
-#   inventory - the inventory for our opponent.
-#
-# Return: Nothing
-# #
-def putTheirInventory(inventory):
-    inventory.constrs.append(Construction((0, 7), ANTHILL))
-    inventory.constrs.append(Construction((1, 7), TUNNEL))
-    queen = Ant((0, 7), QUEEN, PLAYER_TWO)
-    queen.health = 1
-    inventory.ants.append(queen) # Queen
-
-# #
-# equalStates
-# Description: Checks if two game states are equal
-#
-# Parameters:
-#   state1 - a game state
-#   state2 - a game state to check against.
-#
-# Return: Boolean: True if equal, False if Not
-# #
-def equalStates(state1, state2):
-    if state1.phase != state2.phase or state1.whoseTurn != state2.whoseTurn:
-        return False
-    for i in range(0,3):
-        state1Inv = state1.inventories[i]
-        state2Inv = state1.inventories[i]
-        if len(state1Inv.constrs) != len(state2Inv.constrs):
-            return False
-        for j in range(0, len(state1Inv.constrs)):
-            if state1Inv.constrs[i] != state1Inv.constrs[i]:
-                return False
-        if i < 2:
-            if len(state1Inv.ants) != len(state2Inv.ants):
-                return False
-            for k in range(0, len(state1Inv.ants)):
-                if state1Inv.ants[i] != state1Inv.ants[i]:
-                    return False
-            if state1Inv.foodCount != state2Inv.foodCount:
-                return False
-    return True
-
-
-
-
 #unit test 1##
 p = AIPlayer(0)
 p.NUM_NODES = 4
 p.ALPHA = 0.8
 p.networkWeights = [0.5, 0.3, -0.3, 0.0, 0.9, 0.2, 0.0, 0.0, -0.4, -0.8, -0.4, 0.1, -0.1]
-inputs =  [0,1]
+testInputs =  [0,1]
 output = 0.444
-out = p.propagateNeuralNetwork(inputs)
+out = p.propagateNeuralNetwork(testInputs)
 diff =  out[p.NUM_NODES-1] - output
 if diff < 0.01 and diff > -0.01:
     print "propagate test passed."
 else: print "propagate test failed."
 
-p.backPropagateNeuralNetwork(1.0, out, inputs)
-print p.networkWeights
-
-
-
-
-
-
-
-
-
+p.backPropagateNeuralNetwork(1.0, out, testInputs)
+string = "["
+for w in p.networkWeights:
+    string += " {0:.3f} ".format(w)
+print string, "]"
