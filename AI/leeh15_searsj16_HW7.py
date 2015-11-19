@@ -30,15 +30,28 @@ class AIPlayer(Player):
     # #
     def __init__(self, inputPlayerId):
         super(AIPlayer,self).__init__(inputPlayerId, "Thinker")
-        self.ALPHA = 1
+        self.ALPHA = 0.3
         self.limit = 5
         self.NUM_NODES = 9 #8 hidden nodes, NUM_NODES[8] is the output
+        print "Learning coefficient: ", self.ALPHA
 
         # with 8 nodes, there should be 81 weights in this array.
         # x = 8*8 (inputs->nodes) + 1*8 (node bias) +
         #       8*1 (nodes->output) + 1*1 (output bias) = 81 weights
-        self.networkWeights = []
-        self.generateRandomNetworkWeights()
+
+        # EDIT: Hardcoded network weights have been learned
+        self.networkWeights = [ 3.352, -0.707, -3.247, 0.248, 3.973, 3.365, -1.675,
+                                4.941, 2.807, 0.525, 0.728, 2.263, -1.098, 0.250, -4.413,
+                                1.075, -3.934, -3.184, -4.498, -0.064, 0.370, -0.238,
+                                -0.919, 0.359, -4.999, 1.082, -1.066, -1.437, -0.591,
+                                -2.070, 1.356, 3.074, 1.331, 0.004, 2.910, 1.280, -5.164,
+                                4.539, 0.804, 1.409, 2.629, -0.789, 4.244, -2.369, -1.420,
+                                1.156, 0.241, 1.134, -3.899, 5.029, 3.854, 0.364, 4.625,
+                                -2.643, 0.873, 2.125, -1.749, -2.482, 3.252, -2.211, 0.220,
+                                2.590, -2.063, 1.309, -3.439, -1.537, -3.249, 2.111, 0.020,
+                                1.834, 1.981, 3.312, -1.423, -0.614, -0.272, 3.534, -2.042,
+                                -2.032, -2.572, 4.473, -2.932 ]
+        # self.generateRandomNetworkWeights()
 
 
     # createNode
@@ -461,23 +474,25 @@ class AIPlayer(Player):
         scores.append(self.evalWorkerNotCarrying(gameState, ourInv))
         scores.append(self.evalQueenPosition(ourInv))
 
-        scoreSum = 0.0
-        for score in scores:
-            scoreSum += score
-
-        target = scoreSum/8.0
+        # scoreSum = 0.0
+        # for score in scores:
+        #     scoreSum += score
+        #
+        # target = scoreSum/8.0
+        #
+        # outputs = self.propagateNeuralNetwork(scores)
+        # self.backPropagateNeuralNetwork(target, outputs, scores)
+        # error = outputs[self.NUM_NODES -1] - target
+        #
+        # print "Error = ", abs(error)
+        # if abs(error) < 0.03:
+        #     string = "["
+        #     for w in self.networkWeights:
+        #         string += " {0:.3f},".format(w)
+        #     print string, "]"
 
         outputs = self.propagateNeuralNetwork(scores)
-        self.backPropagateNeuralNetwork(target, outputs, scores)
-        error = outputs[self.NUM_NODES -1] - target
-        print "Error = ", abs(error)
-        if abs(error) < 0.03:
-            string = "["
-            for w in self.networkWeights:
-                string += " {0:.3f} ".format(w)
-            print string, "]"
-
-        return target
+        return outputs[self.NUM_NODES -1]
 
     # #
     # CheckIfWon
